@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Who Asked? - Question Finder</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            color: #333;
+            font-size: 3em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .header p {
+            color: #666;
+            font-size: 1.2em;
+        }
+
+        .search-container {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+            align-items: center;
+        }
+
+        .search-input {
+            flex: 1;
+            padding: 15px 20px;
+            border: 2px solid #ddd;
+            border-radius: 50px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            outline: none;
+        }
+
+        .search-input:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .search-btn {
+            padding: 15px 30px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .search-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.6);
+        }
+
+        .search-btn:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .results-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-top: 30px;
+        }
+
+        .platform-section {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            border: 2px solid #f0f0f0;
+        }
+
+        .platform-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .platform-icon {
+            width: 30px;
+            height: 30px;
+            margin-right: 15px;
+            border-radius: 5px;
+        }
+
+        .reddit-icon {
+            background: #ff4500;
+        }
+
+        .quora-icon {
+            background: #aa2200;
+        }
+
+        .platform-title {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .loading {
+            text-align: center;
+            color: #666;
+            font-style: italic;
+            padding: 20px;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .question-item {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-left: 4px solid #667eea;
+            transition: all 0.3s ease;
+        }
+
+        .question-item:hover {
+            transform: translateX(5px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .question-title {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 8px;
+            line-height: 1.4;
+        }
+
+        .question-meta {
+            font-size: 0.9em;
+            color: #666;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .question-link {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .question-link:hover {
+            text-decoration: underline;
+        }
+
+        .no-results {
+            text-align: center;
+            color: #999;
+            font-style: italic;
+            padding: 30px;
+        }
+
+        .error {
+            background: #ffe6e6;
+            border: 2px solid #ff6b6b;
+            border-radius: 10px;
+            padding: 15px;
+            color: #d63031;
+            margin: 10px 0;
+            text-align: center;
+        }
+
+        .success-indicator {
+            background: #e6ffe6;
+            border: 2px solid #6bcf7f;
+            border-radius: 10px;
+            padding: 10px;
+            color: #27ae60;
+            margin: 10px 0;
+            text-align: center;
+            font-size: 14px;
+        }
+
+        @media (max-width: 768px) {
+            .results-container {
+                grid-template-columns: 1fr;
+            }
+            
+            .search-container {
+                flex-direction: column;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔍 Who Asked?</h1>
+            <p>Search Reddit and Quora to find who's asking your questions!</p>
+        </div>
+
+        <div class="search-container">
+            <input type="text" class="search-input" id="searchInput" placeholder="Enter your search query..." />
+            <button class="search-btn" id="searchBtn" onclick="searchQuestions()">Search</button>
+        </div>
+
+        <div class="results-container" id="resultsContainer" style="display: none;">
+            <div class="platform-section">
+                <div class="platform-header">
+                    <div class="platform-icon reddit-icon"></div>
+                    <div class="platform-title">Reddit Questions</div>
+                </div>
+                <div id="redditResults"></div>
+            </div>
+
+            <div class="platform-section">
+                <div class="platform-header">
+                    <div class="platform-icon quora-icon"></div>
+                    <div class="platform-title">Quora Questions</div>
+                </div>
+                <div id="quoraResults"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let searchResults = {
+            reddit: [],
+            quora: []
+        };
+
+        // Search for REAL questions using our Python backend
+        async function searchRealQuestions(query) {
+            try {
+                const response = await fetch('http://localhost:5000/search', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ query: query })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                return {
+                    reddit: data.reddit || [],
+                    quora: data.quora || []
+                };
+            } catch (error) {
+                console.error('Backend search failed:', error);
+                
+                // Show user-friendly error
+                document.getElementById('redditResults').innerHTML = 
+                    '<div class="error">❌ Could not connect to backend server. Make sure the Python server is running on localhost:5000</div>';
+                document.getElementById('quoraResults').innerHTML = 
+                    '<div class="error">❌ Could not connect to backend server. Make sure the Python server is running on localhost:5000</div>';
+                
+                // Return empty results to prevent further errors
+                return { reddit: [], quora: [] };
+            }
+        }
+
+        // More realistic simulation that could be replaced with real API calls
+        async function simulateRedditSearch(query) {
+            // In a real implementation, you would use Reddit's API or web scraping
+            // For demo purposes, creating more contextual results
+            const questionTemplates = [
+                `${query}`,
+                `How to ${query}?`,
+                `Best way to ${query}?`,
+                `${query} advice needed`,
+                `Anyone know about ${query}?`,
+                `${query} help please`,
+                `Question about ${query}`,
+                `${query} - what do you think?`
+            ];
+            
+            const subreddits = getRelevantSubreddits(query);
+            const numResults = Math.floor(Math.random() * 5) + 3;
+            
+            return questionTemplates.slice(0, numResults).map((template, i) => ({
+                title: template.charAt(0).toUpperCase() + template.slice(1),
+                author: generateUsername(),
+                subreddit: subreddits[Math.floor(Math.random() * subreddits.length)],
+                score: Math.floor(Math.random() * 1000) + 1,
+                comments: Math.floor(Math.random() * 200) + 1,
+                url: `https://reddit.com/r/${subreddits[0]}/comments/${generateId()}`,
+                timeAgo: generateTimeAgo()
+            }));
+        }
+
+        async function simulateQuoraSearch(query) {
+            const questionTemplates = [
+                `What is ${query}?`,
+                `How does ${query} work?`,
+                `Why is ${query} important?`,
+                `What are the benefits of ${query}?`,
+                `${query}: Expert opinions?`,
+                `How to improve ${query}?`,
+                `${query} vs alternatives?`,
+                `Common mistakes with ${query}?`
+            ];
+            
+            const numResults = Math.floor(Math.random() * 4) + 2;
+            
+            return questionTemplates.slice(0, numResults).map((template, i) => ({
+                title: template.charAt(0).toUpperCase() + template.slice(1),
+                author: generateUsername(),
+                views: Math.floor(Math.random() * 50000) + 1000,
+                answers: Math.floor(Math.random() * 30) + 1,
+                url: `https://quora.com/${generateId()}`,
+                followers: Math.floor(Math.random() * 500) + 10
+            }));
+        }
+
+        function getRelevantSubreddits(query) {
+            const commonSubs = ['AskReddit', 'NoStupidQuestions', 'explainlikeimfive', 'LifeProTips', 'advice'];
+            
+            // Add topic-specific subreddits based on query
+            if (query.toLowerCase().includes('programming') || query.toLowerCase().includes('code')) {
+                return ['programming', 'learnprogramming', 'AskProgramming', ...commonSubs];
+            } else if (query.toLowerCase().includes('health') || query.toLowerCase().includes('fitness')) {
+                return ['fitness', 'health', 'AskDocs', ...commonSubs];
+            } else if (query.toLowerCase().includes('game') || query.toLowerCase().includes('gaming')) {
+                return ['gaming', 'AskGames', 'GameDev', ...commonSubs];
+            }
+            
+            return commonSubs;
+        }
+
+        function generateUsername() {
+            const prefixes = ['user', 'curious', 'ask', 'help', 'question', 'know', 'learn', 'seek'];
+            const suffixes = ['123', '456', '_mind', '_seeker', '_helper', '_asker', '2024', 'er'];
+            const prefix = prefixes[Math.floor(Math.random() * prefixes.length)];
+            const suffix = suffixes[Math.floor(Math.random() * suffixes.length)];
+            return prefix + suffix;
+        }
+
+        function generateId() {
+            return Math.random().toString(36).substring(2, 10);
+        }
+
+        function generateTimeAgo() {
+            const times = ['2h ago', '5h ago', '1d ago', '3d ago', '1w ago', '2w ago', '1m ago'];
+            return times[Math.floor(Math.random() * times.length)];
+        }
+
+        function showLoading() {
+            document.getElementById('redditResults').innerHTML = '<div class="loading"><div class="spinner"></div>Searching Reddit...</div>';
+            document.getElementById('quoraResults').innerHTML = '<div class="loading"><div class="spinner"></div>Searching Quora...</div>';
+        }
+
+        function displayResults() {
+            const redditContainer = document.getElementById('redditResults');
+            const quoraContainer = document.getElementById('quoraResults');
+
+            // Display Reddit results
+            if (searchResults.reddit.length === 0) {
+                redditContainer.innerHTML = '<div class="no-results">No Reddit questions found</div>';
+            } else {
+                redditContainer.innerHTML = searchResults.reddit.map(item => `
+                    <div class="question-item">
+                        <div class="question-title">${item.title}</div>
+                        <div class="question-meta">
+                            <span>by u/${item.author} in r/${item.subreddit}</span>
+                            <span>${item.score} upvotes</span>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            // Display Quora results
+            if (searchResults.quora.length === 0) {
+                quoraContainer.innerHTML = '<div class="no-results">No Quora questions found</div>';
+            } else {
+                quoraContainer.innerHTML = searchResults.quora.map(item => `
+                    <div class="question-item">
+                        <div class="question-title">${item.title}</div>
+                        <div class="question-meta">
+                            <span>by ${item.author}</span>
+                            <span>${item.views.toLocaleString()} views • ${item.answers} answers</span>
+                        </div>
+                    </div>
+                `).join('');
+            }
+        }
+
+        async function searchQuestions() {
+            const query = document.getElementById('searchInput').value.trim();
+            if (!query) {
+                alert('Please enter a search query!');
+                return;
+            }
+
+            const searchBtn = document.getElementById('searchBtn');
+            const resultsContainer = document.getElementById('resultsContainer');
+
+            searchBtn.disabled = true;
+            searchBtn.textContent = 'Searching...';
+            resultsContainer.style.display = 'grid';
+            
+            showLoading();
+
+            try {
+                // Simulate API delay
+                await new Promise(resolve => setTimeout(resolve, 1500));
+
+                // Search for REAL results using Python backend!
+                searchResults = await searchRealQuestions(query);
+                displayResults();
+
+            } catch (error) {
+                document.getElementById('redditResults').innerHTML = '<div class="error">Error searching Reddit</div>';
+                document.getElementById('quoraResults').innerHTML = '<div class="error">Error searching Quora</div>';
+            } finally {
+                searchBtn.disabled = false;
+                searchBtn.textContent = 'Search';
+            }
+        }
+
+        // Allow Enter key to search
+        document.getElementById('searchInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                searchQuestions();
+            }
+        });
+
+        // Auto-focus search input
+        document.getElementById('searchInput').focus();
+    </script>
+</body>
+</html>
